@@ -1,12 +1,7 @@
-import { Server, ClientRequest, ServerResponse } from 'http';
+import app from './app';
 
-const server = new Server();
 const PORT = process.env.PORT || 8090
-server.on('request', async (req: ClientRequest, res: ServerResponse) => {
-    res.write('hello');
-    res.end();
-});
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log('listening on ', PORT);
 });

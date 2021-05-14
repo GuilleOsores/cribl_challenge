@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/server",
     "dev": "ts-node src/server",
-    "test": "echo hello",
+    "test": "ts-mocha test/**/*.ts",
     "build": "tsc"
   },
   "repository": {
@@ -24,7 +24,14 @@
   },
   "homepage": "https://github.com/GuilleOsores/cribl_challenge#readme",
   "devDependencies": {
+    "@types/chai": "^4.2.18",
+    "@types/mocha": "^8.2.2",
     "@types/node": "^15.0.3",
+    "@types/supertest": "^2.0.11",
+    "chai": "^4.3.4",
+    "mocha": "^8.4.0",
+    "supertest": "^6.1.3",
+    "ts-mocha": "^8.0.0",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.4"
   }
