@@ -9,8 +9,16 @@ describe('tests', () => {
         const res = await server.get('/error');
         expect(res.statusCode).to.equal(404);
     });
-    it('200', async () => {
-        const res = await server.get('/');
+    it('listFiles', async () => {
+        const res = await server.get('/listFiles');
+        expect(res.statusCode).to.equal(200);
+    });
+    it('getFile', async () => {
+        const res = await server.get('/getFile');
+        expect(res.statusCode).to.equal(200);
+    })
+    it('uploadFile', async () => {
+        const res = await server.post('/uploadFile');
         expect(res.statusCode).to.equal(200);
     })
 });
