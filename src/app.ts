@@ -7,8 +7,9 @@ addRoutes(router);
 
 app.on('request', async (req: IncomingMessage, res: ServerResponse) => {
     const { method, url, headers } = req;
-    
-    let handlers = router.getHandlers(method, url);
+
+    const baseUrl = url.split('?').shift();
+    let handlers = router.getHandlers(method, baseUrl);
 
     if (handlers) {
         handlers = Array.isArray(handlers) ? handlers : [handlers];
@@ -16,7 +17,8 @@ app.on('request', async (req: IncomingMessage, res: ServerResponse) => {
             for (const handler of handlers) {
                 await handler(req, res);
             }
-        } catch {
+        } catch (e) {
+            console.log(e);
             res.statusCode = 500;
             res.end();
         }
