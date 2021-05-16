@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/server",
     "dev": "ts-node src/server",
-    "test": "SET LOG_LEVEL=99 && ts-mocha test/**/*.ts",
+    "test": "ts-mocha test/**/*.ts",
     "build": "tsc"
   },
   "repository": {
