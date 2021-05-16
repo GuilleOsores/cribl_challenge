@@ -5,4 +5,5 @@ export default async function (router: Router) {
     router.get('/listFiles', file.list);
     router.get('/getFile', file.get);
     router.post('/uploadFile', file.upload);
+    router.delete('/deleteFile', file.deleteFile);
 }
