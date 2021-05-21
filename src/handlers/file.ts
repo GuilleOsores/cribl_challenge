@@ -67,17 +67,6 @@ export async function upload(req: IncomingMessage, res: ServerResponse) {
         res.end();
       }
     });
-      
-    req.on('end', async (...args) => {
-      try {
-        logger.log(ENUM_LOG_LEVEL.debug, 'request end');
-        await chunksProcesor.end();
-      } catch (e) {
-        logger.log(ENUM_LOG_LEVEL.error, e);
-        res.statusCode = 400;
-        res.end();
-      }
-    });
 
     req.on('error', (e) => {
       logger.log(ENUM_LOG_LEVEL.error, 'request error: ', e);
@@ -105,6 +94,8 @@ class ChunksProcesor {
   boundary: string;
   res: ServerResponse;
   started: boolean;
+  contentLength: number;
+  processedContentLength: number;
 
   constructor(req: IncomingMessage, res: ServerResponse) {
     if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
@@ -115,6 +106,8 @@ class ChunksProcesor {
       this.started = false;
       this.boundary = req.headers['content-type'].split(';')[1].split('=')[1].trim();
       this.ctx = {};
+      this.contentLength = parseInt(req.headers['content-length']),
+      this.processedContentLength = 0;
       this.enableProcessing = true;
     } else {
       this.enableProcessing = false;
@@ -126,9 +119,9 @@ class ChunksProcesor {
 
   async addChunk(chunk: Buffer) {
     this.started = true;
+    this.queue.push(chunk);
     if (!this.processing) {
       this.processing = true;
-      this.queue.push(chunk);
       await this.process();
     }
   }
@@ -146,7 +139,7 @@ class ChunksProcesor {
       }
     } else {
       this.processing = false;
-      if (this.complete) {
+      if (this.processedContentLength === this.contentLength) {
         await this.close();
       }
     }
@@ -180,6 +173,7 @@ class ChunksProcesor {
                   await promify(mkdir, UPLOAD_FOLDER);
               }
           }
+          this.ctx.filename = `${this.ctx.filename.substring(0, this.ctx.filename.length -4)}_${(new Date()).getTime()}.tgz`;
           this.ctx.file = createWriteStream(join(UPLOAD_FOLDER, this.ctx.filename));
         }
         part = part.subarray(content.length + 4, part.length);
@@ -188,6 +182,7 @@ class ChunksProcesor {
         this.ctx.file.write(part);
       }
     }
+    this.processedContentLength += chunk.length;
   }
 
   async getParts(chunk: Buffer, boundary: string): Promise<Buffer[]> {
