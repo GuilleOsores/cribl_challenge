@@ -99,6 +99,7 @@ class ChunksProcesor {
   ctx: Context;
   queue: Array<Buffer>;
   complete: boolean;
+  enableProcessing: boolean;
   processing: boolean;
   file: WriteStream;
   boundary: string;
@@ -114,7 +115,9 @@ class ChunksProcesor {
       this.started = false;
       this.boundary = req.headers['content-type'].split(';')[1].split('=')[1].trim();
       this.ctx = {};
+      this.enableProcessing = true;
     } else {
+      this.enableProcessing = false;
       logger.log(ENUM_LOG_LEVEL.info, 'invalid content type');
       res.statusCode = 400;
       res.end(new Error('invalid content type'));
@@ -131,14 +134,15 @@ class ChunksProcesor {
   }
 
   async process() {
+    if (!this.enableProcessing) return;
     if (this.queue.length) {
       try {
         logger.log(ENUM_LOG_LEVEL.debug, 'processing chunk for: ', this.ctx.filename);
         await this.processChunk(this.queue.shift());
         await this.process();
       } catch (e) {
-        this.processing = false;
-        await this.end(e);
+        this.enableProcessing = false;
+        await this.close(e);
       }
     } else {
       this.processing = false;
@@ -219,20 +223,21 @@ class ChunksProcesor {
   async end(e?: Error) {
     if (!this.started) return;
     this.complete = true;
-    if (!this.queue.length) {
-      await this.close(e);
+    if (!this.processing) {
+      await this.process();
     }
   }
 
   async close(e?: Error) {
-    logger.log(ENUM_LOG_LEVEL.info, 'process complete');
     if(this.ctx.file) {
       this.ctx.file.close();
     }
     if (e) {
+      logger.log(ENUM_LOG_LEVEL.error, e);
       this.res.statusCode = 500;
       return this.res.end(e.message);
     }
+    logger.log(ENUM_LOG_LEVEL.info, 'process complete');
     return this.res.end('ok');
   }
 }
