@@ -30,7 +30,8 @@ describe('tests', () => {
         expect(res.statusCode).to.equal(200);
     });
 
-    it('upload multiple files', async () => {
+    it('upload multiple files', async function () {
+        this.timeout(5000);
         const readStreams = [
             createReadStream(join('test', 'testFile1.tgz')),
             createReadStream(join('test', 'testFile2.tgz')),
@@ -45,21 +46,23 @@ describe('tests', () => {
     it('list files', async () => {
         const res = await server.get('/listFiles');
         expect(res.statusCode).to.equal(200);
-        expect(res.text).to.include('testFile1.tgz');
+        expect(res.text).to.match(/testFile1_\d+.tgz/);
     });
 
     it('get file', async () => {
-        const res = await server.get('/getFile?filename=testFile1.tgz');
+        const { text: files } = await server.get('/listFiles');
+        const filename = JSON.parse(files).find(f => f.includes('testFile1'));
+        const res = await server.get('/getFile?filename=' + filename);
         expect(res.statusCode).to.equal(200);
         const file = readFileSync(join('test', 'testFile1.tgz'));
-        expect(Buffer.from(res.body).equals(file));
+        expect(Buffer.from(res.body)).to.deep.equal(file)
     });
 
     it('delete file', async () => {
-        await Promise.all([
-            server.delete('/deleteFile?filename=testFile1.tgz'),
-            server.delete('/deleteFile?filename=testFile2.tgz'),
-            server.delete('/deleteFile?filename=testFile3.tgz'),
-        ]);
+        const { text: files } = await server.get('/listFiles');
+        const filenames = JSON.parse(files).filter(f => f.includes('testFile'));
+        await Promise.all(
+            filenames.map(file => server.delete('/deleteFile?filename=' + file)),
+        );
     });
 });
